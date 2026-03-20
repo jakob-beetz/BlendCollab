@@ -1,0 +1,46 @@
+{
+  "users": {
+    "0301b5d727ac43a7a2d24431655d07763e6eb242031c736b": {
+      "username": "student01",
+      "display_name": "Student 01",
+      "cell_id": "A1.1",
+      "registered_at": "2026-03-20T07:40:24.827011+00:00"
+    },
+    "06458ecaa921cb85c0be30fa2cd687032364cc8dc84f7ce1": {
+      "username": "student02",
+      "display_name": "Student 02",
+      "cell_id": "A1.2",
+      "registered_at": "2026-03-20T07:58:01.965563+00:00"
+    },
+    "245c47068e118f251f6dd18240fafb5f48a9d81c21d4acb9": {
+      "username": "student03",
+      "display_name": "Student 03",
+      "cell_id": "A1.3",
+      "registered_at": "2026-03-20T08:08:28.946841+00:00"
+    }
+  },
+  "cells": {
+    "A1.1": {
+      "username": "student01",
+      "display_name": "Student 01",
+      "cell_id": "A1.1",
+      "group": "A1",
+      "updated_at": "2026-03-20T08:14:47.393162+00:00",
+      "checksum": "521c7f29956fd73e",
+      "version": 1773994487,
+      "filename": "cell_A1_1_v1773994487.blend",
+      "size_bytes": 207403
+    },
+    "A1.2": {
+      "username": "student02",
+      "display_name": "Student 02",
+      "cell_id": "A1.2",
+      "group": "A1",
+      "updated_at": "2026-03-20T08:13:49.537872+00:00",
+      "checksum": "9ef29e56570f864e",
+      "version": 1773994429,
+      "filename": "cell_A1_2_v1773994429.blend",
+      "size_bytes": 140322
+    }
+  }
+}

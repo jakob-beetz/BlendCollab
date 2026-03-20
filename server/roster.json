@@ -1,0 +1,51 @@
+{
+  "_comment": "Instructor roster. Map student usernames to cell IDs. Edit this file before the session, then restart the server. Students register by username only — the server looks up their cell here.",
+
+  "_instructions": [
+    "1. Replace placeholder names with your actual student names (lowercase, no spaces).",
+    "2. Each cell_id must match an entry in layout.json.",
+    "3. A student not listed here cannot register.",
+    "4. Set 'active': false to temporarily disable a student without removing them.",
+    "5. 'display_name' is shown on the dashboard; 'username' is used for login."
+  ],
+
+  "students": [
+    { "username": "student01", "display_name": "Student 01", "cell_id": "A1.1", "active": true },
+    { "username": "student02", "display_name": "Student 02", "cell_id": "A1.2", "active": true },
+    { "username": "student03", "display_name": "Student 03", "cell_id": "A1.3", "active": true },
+    { "username": "student04", "display_name": "Student 04", "cell_id": "A1.4", "active": true },
+    { "username": "student05", "display_name": "Student 05", "cell_id": "A1.5", "active": true },
+    { "username": "student06", "display_name": "Student 06", "cell_id": "A1.6", "active": true },
+    { "username": "student07", "display_name": "Student 07", "cell_id": "A1.7", "active": true },
+    { "username": "student08", "display_name": "Student 08", "cell_id": "A1.8", "active": true },
+    { "username": "student09", "display_name": "Student 09", "cell_id": "A1.9", "active": true },
+
+    { "username": "student10", "display_name": "Student 10", "cell_id": "A2.1", "active": true },
+    { "username": "student11", "display_name": "Student 11", "cell_id": "A2.2", "active": true },
+    { "username": "student12", "display_name": "Student 12", "cell_id": "A2.3", "active": true },
+    { "username": "student13", "display_name": "Student 13", "cell_id": "A2.4", "active": true },
+    { "username": "student14", "display_name": "Student 14", "cell_id": "A2.5", "active": true },
+    { "username": "student15", "display_name": "Student 15", "cell_id": "A2.6", "active": true },
+    { "username": "student16", "display_name": "Student 16", "cell_id": "A2.7", "active": true },
+    { "username": "student17", "display_name": "Student 17", "cell_id": "A2.8", "active": true },
+
+    { "username": "student18", "display_name": "Student 18", "cell_id": "B1.1", "active": true },
+    { "username": "student19", "display_name": "Student 19", "cell_id": "B1.2", "active": true },
+    { "username": "student20", "display_name": "Student 20", "cell_id": "B1.3", "active": true },
+    { "username": "student21", "display_name": "Student 21", "cell_id": "B1.4", "active": true },
+    { "username": "student22", "display_name": "Student 22", "cell_id": "B1.5", "active": true },
+    { "username": "student23", "display_name": "Student 23", "cell_id": "B1.6", "active": true },
+    { "username": "student24", "display_name": "Student 24", "cell_id": "B1.7", "active": true },
+    { "username": "student25", "display_name": "Student 25", "cell_id": "B1.8", "active": true },
+    { "username": "student26", "display_name": "Student 26", "cell_id": "B1.9", "active": true },
+
+    { "username": "student27", "display_name": "Student 27", "cell_id": "B2.1", "active": true },
+    { "username": "student28", "display_name": "Student 28", "cell_id": "B2.2", "active": true },
+    { "username": "student29", "display_name": "Student 29", "cell_id": "B2.3", "active": true },
+    { "username": "student30", "display_name": "Student 30", "cell_id": "B2.4", "active": true },
+    { "username": "student31", "display_name": "Student 31", "cell_id": "B2.5", "active": true },
+    { "username": "student32", "display_name": "Student 32", "cell_id": "B2.6", "active": true },
+    { "username": "student33", "display_name": "Student 33", "cell_id": "B2.7", "active": true },
+    { "username": "student34", "display_name": "Student 34", "cell_id": "B2.8", "active": true }
+  ]
+}

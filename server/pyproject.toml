@@ -1,0 +1,21 @@
+[project]
+name = "blender-collab"
+version = "0.1.0"
+description = "Collaborative Blender parcel server for the B-Atelier site plan"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=23.2.1",
+    "fastapi>=0.111.0",
+    "python-multipart>=0.0.9",
+    "uvicorn[standard]>=0.29.0",
+]
+
+[tool.uv]
+# Ensure uv sync fails loudly rather than re-resolving if uv.lock is stale.
+# Useful in CI and Docker builds.
+frozen = false
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

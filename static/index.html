@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BlenderCollab · Site Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0b0c10;
+  --surface:  #12141a;
+  --surface2: #191c25;
+  --border:   #22263a;
+  --text:     #dde0f0;
+  --text2:    #6b7090;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'Syne', sans-serif;
+  --accent:   #c8f060;
+  --danger:   #ff5566;
+  --warn:     #ffcc44;
+
+  /* group colours — match layout.json */
+  --g-A1: #e87ea1;
+  --g-A2: #6db8d4;
+  --g-B1: #7dba84;
+  --g-B2: #c9c96a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 56px 1fr 40px;
+  grid-template-columns: 1fr 320px;
+  grid-template-areas:
+    "header  header"
+    "map     sidebar"
+    "footer  footer";
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  grid-area: header;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 28px;
+}
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+
+.brand-hex {
+  width: 28px; height: 28px;
+  background: var(--accent);
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation: hpulse 2.5s ease-in-out infinite;
+}
+
+@keyframes hpulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%     { opacity:.65; transform:scale(.92); }
+}
+
+.brand h1 {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  color: var(--accent);
+}
+
+.brand sub {
+  font-size: 10px;
+  color: var(--text2);
+  font-family: var(--mono);
+  display: block;
+  margin-top: 1px;
+  letter-spacing: .05em;
+}
+
+.header-divider {
+  width: 1px; height: 28px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.header-stats {
+  display: flex; gap: 24px;
+}
+
+.hstat { text-align: center; }
+.hstat-v {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+.hstat-l {
+  font-size: 9px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-top: 2px;
+}
+
+.conn-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.conn-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text2);
+  transition: background .3s, box-shadow .3s;
+}
+
+.conn-dot.live {
+  background: var(--accent);
+  box-shadow: 0 0 7px var(--accent);
+}
+
+/* ── Map area ── */
+.map-area {
+  grid-area: map;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 20px 20px 20px 28px;
+  gap: 12px;
+}
+
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.map-toolbar h2 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.map-toolbar label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.map-toolbar input[type=checkbox] {
+  accent-color: var(--accent);
+}
+
+.legend {
+  margin-left: auto;
+  display: flex; gap: 14px;
+}
+
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px;
+  color: var(--text2);
+  font-family: var(--mono);
+}
+
+.legend-swatch {
+  width: 12px; height: 12px;
+  border-radius: 2px;
+  opacity: .85;
+}
+
+.map-frame {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── SVG map ── */
+#site-svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+
+.cell-rect {
+  cursor: pointer;
+  transition: opacity .15s;
+}
+
+.cell-rect:hover { opacity: .75; }
+
+.cell-rect.updated {
+  animation: cellpulse .7s ease-out;
+}
+
+@keyframes cellpulse {
+  0%   { filter: brightness(2.5) drop-shadow(0 0 6px white); }
+  100% { filter: none; }
+}
+
+.cell-label {
+  font-family: var(--mono);
+  font-size: 5.5px;
+  font-weight: 600;
+  fill: rgba(0,0,0,.7);
+  pointer-events: none;
+  user-select: none;
+}
+
+.cell-name {
+  font-family: var(--mono);
+  font-size: 4px;
+  fill: rgba(0,0,0,.55);
+  pointer-events: none;
+  user-select: none;
+}
+
+.cell-badge {
+  pointer-events: none;
+}
+
+.site-outline {
+  fill: #14161d;
+  stroke: #2d3252;
+  stroke-width: .3;
+}
+
+.grid-line {
+  stroke: #1d2030;
+  stroke-width: .15;
+  stroke-dasharray: 1 1;
+}
+
+/* ── Sidebar ── */
+aside {
+  grid-area: sidebar;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.aside-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.aside-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+
+.aside-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.aside-content {
+  flex: 1;
+  overflow-y: auto;
+  display: none;
+}
+
+.aside-content.active { display: block; }
+.aside-content::-webkit-scrollbar { width: 3px; }
+.aside-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Activity log ── */
+.log-entry {
+  display: grid;
+  grid-template-columns: 8px 1fr;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  animation: fadein .3s ease-out;
+}
+
+@keyframes fadein {
+  from { opacity:0; transform:translateX(6px); }
+  to   { opacity:1; transform:none; }
+}
+
+.log-pip {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 3px;
+}
+.log-pip.update   { background: var(--accent); }
+.log-pip.register { background: #7b9eff; }
+.log-pip.reset    { background: var(--danger); }
+
+.log-user { font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.log-desc { font-size: 11px; color: var(--text2); margin-top: 2px; line-height: 1.4; }
+.log-time { font-family: var(--mono); font-size: 9px; color: var(--text2); margin-top: 3px; }
+
+/* ── Roster list ── */
+.roster-group {
+  padding: 10px 16px 4px;
+}
+
+.roster-group-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.g-dot {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(255,255,255,.02);
+}
+
+.r-cell {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.r-name { flex: 1; color: var(--text); font-size: 11px; }
+
+.r-badge {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text2);
+  flex-shrink: 0;
+}
+
+.r-badge.published { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+.r-badge.updated   { background: var(--warn);   box-shadow: 0 0 4px var(--warn); }
+
+/* ── Tooltip ── */
+.tt {
+  position: fixed;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 12px 15px;
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  min-width: 180px;
+  box-shadow: 0 12px 30px rgba(0,0,0,.6);
+}
+
+.tt.show { display: block; }
+.tt-id   { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+.tt-row  { font-size: 11px; color: var(--text2); margin-top: 3px; }
+.tt-row span { color: var(--text); }
+.tt-dl {
+  margin-top: 8px;
+  width: 100%;
+  background: rgba(200,240,96,.15);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 5px 0;
+  cursor: pointer;
+  display: none;
+  pointer-events: all;
+}
+.tt-dl:hover { background: rgba(200,240,96,.25); }
+
+/* ── Footer ── */
+footer {
+  grid-area: footer;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-hex"></div>
+    <div>
+      <h1>BLENDERCOLLAB</h1>
+      <sub>B-Atelier · Site Plan</sub>
+    </div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-stats">
+    <div class="hstat"><div class="hstat-v" id="s-active">0</div><div class="hstat-l">Published</div></div>
+    <div class="hstat"><div class="hstat-v" id="s-users">0</div><div class="hstat-l">Online</div></div>
+    <div class="hstat"><div class="hstat-v" id="s-updates">0</div><div class="hstat-l">Updates</div></div>
+    <div class="hstat"><div class="hstat-v" id="s-cells">—</div><div class="hstat-l">Total Cells</div></div>
+  </div>
+  <div class="conn-pill">
+    <div class="conn-dot" id="cdot"></div>
+    <span id="clabel">Connecting…</span>
+  </div>
+</header>
+
+<div class="map-area">
+  <div class="map-toolbar">
+    <h2>Site Plan · B-Atelier · 1:1 Scale</h2>
+    <label><input type="checkbox" id="chk-labels" checked> Labels</label>
+    <label><input type="checkbox" id="chk-names"  checked> Names</label>
+    <label><input type="checkbox" id="chk-grid">  Grid</label>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--g-A1)"></div>A1</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--g-A2)"></div>A2</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--g-B1)"></div>B1</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--g-B2)"></div>B2</div>
+    </div>
+  </div>
+  <div class="map-frame">
+    <svg id="site-svg" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
+      <g id="g-grid"></g>
+      <g id="g-cells"></g>
+      <g id="g-labels"></g>
+    </svg>
+  </div>
+</div>
+
+<aside>
+  <div class="aside-tab-bar">
+    <div class="aside-tab active" data-tab="log">Activity</div>
+    <div class="aside-tab" data-tab="roster">Roster</div>
+  </div>
+  <div class="aside-content active" id="tab-log"></div>
+  <div class="aside-content" id="tab-roster"></div>
+</aside>
+
+<footer>
+  <span>BlenderCollab · Flask + SSE · B-Atelier</span>
+  <span id="fclock"></span>
+</footer>
+
+<!-- Tooltip -->
+<div class="tt" id="tt">
+  <div class="tt-id" id="tt-id">—</div>
+  <div class="tt-row">Group: <span id="tt-group">—</span></div>
+  <div class="tt-row">Author: <span id="tt-author">—</span></div>
+  <div class="tt-row">Version: <span id="tt-ver">—</span></div>
+  <div class="tt-row">Updated: <span id="tt-ts">—</span></div>
+  <div class="tt-row">Size: <span id="tt-size">—</span></div>
+  <button class="tt-dl" id="tt-dl">⬇ Download .blend</button>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Config
+// ──────────────────────────────────────────────────────────────────────────────
+const SERVER = window.location.origin;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────────────────────────────────────
+let LAYOUT   = null;   // full layout.json
+let cells    = {};     // cell_id -> server info
+let roster   = [];     // [{username, display_name, cell_id, active}]
+let updateCount = 0;
+let hoverCell   = null;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SVG map helpers
+// ──────────────────────────────────────────────────────────────────────────────
+
+// We project world-metres into SVG viewBox coordinates.
+// We'll compute a transform after LAYOUT is loaded.
+let SVG_SCALE = 8;     // pixels per metre
+let SVG_PAD   = 10;    // padding around cells
+let SVG_OX    = 0;     // offset to shift all cells
+let SVG_OY    = 0;
+
+const NS = "http://www.w3.org/2000/svg";
+
+function m2s(x, y) {
+  // world metres → SVG coords (y is flipped: SVG y grows down, world y grows up)
+  return [
+    SVG_PAD + (x - (LAYOUT.site_bounds.min_x)) * SVG_SCALE,
+    SVG_PAD + (LAYOUT.site_bounds.max_y - y)   * SVG_SCALE
+  ];
+}
+
+function setupViewBox() {
+  const b  = LAYOUT.site_bounds;
+  const W  = (b.max_x - b.min_x) * SVG_SCALE + SVG_PAD * 2;
+  const H  = (b.max_y - b.min_y) * SVG_SCALE + SVG_PAD * 2;
+  const svg = document.getElementById("site-svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+}
+
+function buildMap() {
+  if (!LAYOUT) return;
+  setupViewBox();
+
+  const gCells  = document.getElementById("g-cells");
+  const gLabels = document.getElementById("g-labels");
+  const gGrid   = document.getElementById("g-grid");
+  gCells.innerHTML  = "";
+  gLabels.innerHTML = "";
+  gGrid.innerHTML   = "";
+
+  const S = LAYOUT.parcel_size;
+
+  // Optional grid lines (every 3m = every cell)
+  // Drawn behind cells
+  const b = LAYOUT.site_bounds;
+  for (let x = b.min_x; x <= b.max_x; x += S) {
+    const [sx1, sy1] = m2s(x, b.min_y);
+    const [sx2, sy2] = m2s(x, b.max_y);
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", sx1); line.setAttribute("y1", sy1);
+    line.setAttribute("x2", sx2); line.setAttribute("y2", sy2);
+    line.setAttribute("class", "grid-line");
+    gGrid.appendChild(line);
+  }
+  for (let y = b.min_y; y <= b.max_y; y += S) {
+    const [sx1, sy1] = m2s(b.min_x, y);
+    const [sx2, sy2] = m2s(b.max_x, y);
+    const line = document.createElementNS(NS, "line");
+    line.setAttribute("x1", sx1); line.setAttribute("y1", sy1);
+    line.setAttribute("x2", sx2); line.setAttribute("y2", sy2);
+    line.setAttribute("class", "grid-line");
+    gGrid.appendChild(line);
+  }
+
+  const showGrid = document.getElementById("chk-grid").checked;
+  gGrid.style.display = showGrid ? "" : "none";
+
+  for (const [cellId, cellDef] of Object.entries(LAYOUT.cells)) {
+    const [ox, oy]  = cellDef.origin;
+    const [sx, sy]  = m2s(ox, oy + S);  // top-left in SVG space (oy+S because we flip y)
+    const sw        = S * SVG_SCALE;
+    const sh        = S * SVG_SCALE;
+    const colour    = LAYOUT.groups[cellDef.group].color;
+
+    // ── Cell rectangle ──
+    const rect = document.createElementNS(NS, "rect");
+    rect.setAttribute("x", sx);
+    rect.setAttribute("y", sy);
+    rect.setAttribute("width",  sw);
+    rect.setAttribute("height", sh);
+    rect.setAttribute("fill",   colour);
+    rect.setAttribute("fill-opacity", "0.55");
+    rect.setAttribute("stroke", colour);
+    rect.setAttribute("stroke-width", "0.5");
+    rect.setAttribute("rx", "1");
+    rect.setAttribute("class", "cell-rect");
+    rect.dataset.cellId = cellId;
+    rect.id = `rect-${cellId}`;
+
+    rect.addEventListener("mouseenter", onCellEnter);
+    rect.addEventListener("mouseleave", onCellLeave);
+    rect.addEventListener("mousemove",  onCellMove);
+
+    gCells.appendChild(rect);
+
+    // ── Cell ID label ──
+    const lbl = document.createElementNS(NS, "text");
+    lbl.setAttribute("x", sx + sw * 0.5);
+    lbl.setAttribute("y", sy + sh * 0.38);
+    lbl.setAttribute("text-anchor", "middle");
+    lbl.setAttribute("class", "cell-label");
+    lbl.setAttribute("id", `lbl-${cellId}`);
+    lbl.textContent = cellId;
+    gLabels.appendChild(lbl);
+
+    // ── Author name label ──
+    const nlbl = document.createElementNS(NS, "text");
+    nlbl.setAttribute("x", sx + sw * 0.5);
+    nlbl.setAttribute("y", sy + sh * 0.65);
+    nlbl.setAttribute("text-anchor", "middle");
+    nlbl.setAttribute("class", "cell-name");
+    nlbl.setAttribute("id", `name-${cellId}`);
+    nlbl.textContent = "";
+    gLabels.appendChild(nlbl);
+  }
+}
+
+function updateCellVisual(cellId, info, flash = false) {
+  const rect = document.getElementById(`rect-${cellId}`);
+  const nlbl = document.getElementById(`name-${cellId}`);
+  if (!rect) return;
+
+  rect.setAttribute("fill-opacity", "0.80");
+  rect.setAttribute("stroke-width", "1.2");
+
+  if (nlbl) {
+    const dn = info.display_name || info.username || "";
+    nlbl.textContent = dn.length > 10 ? dn.slice(0, 9) + "…" : dn;
+  }
+
+  if (flash) {
+    rect.classList.remove("updated");
+    void rect.offsetWidth; // reflow to restart animation
+    rect.classList.add("updated");
+  }
+
+  // "changed" badge — small yellow circle top-right
+  const existingBadge = document.getElementById(`badge-${cellId}`);
+  if (existingBadge) existingBadge.remove();
+}
+
+function clearChangedBadge(cellId) {
+  const b = document.getElementById(`badge-${cellId}`);
+  if (b) b.remove();
+}
+
+function addChangedBadge(cellId) {
+  const rect = document.getElementById(`rect-${cellId}`);
+  if (!rect) return;
+
+  if (document.getElementById(`badge-${cellId}`)) return;
+
+  const svg  = document.getElementById("site-svg");
+  const gLbl = document.getElementById("g-labels");
+  const S    = LAYOUT.parcel_size;
+  const def  = LAYOUT.cells[cellId];
+  if (!def) return;
+
+  const [ox, oy] = def.origin;
+  const [sx, sy] = m2s(ox, oy + S);
+  const sw = S * SVG_SCALE;
+
+  const circle = document.createElementNS(NS, "circle");
+  circle.setAttribute("cx", sx + sw - 3);
+  circle.setAttribute("cy", sy + 3);
+  circle.setAttribute("r",  2.5);
+  circle.setAttribute("fill", "#ffcc44");
+  circle.setAttribute("id",  `badge-${cellId}`);
+  circle.setAttribute("class", "cell-badge");
+  gLbl.appendChild(circle);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tooltip
+// ──────────────────────────────────────────────────────────────────────────────
+
+const tt = document.getElementById("tt");
+let ttCell = null;
+
+function onCellEnter(e) {
+  const cid  = e.currentTarget.dataset.cellId;
+  const info = cells[cid];
+  hoverCell  = cid;
+  ttCell     = cid;
+
+  document.getElementById("tt-id").textContent    = cid;
+  document.getElementById("tt-group").textContent = LAYOUT.cells[cid]?.group || "—";
+
+  if (info) {
+    document.getElementById("tt-author").textContent = info.display_name || info.username || "—";
+    document.getElementById("tt-ver").textContent    = `v${info.version || 1}`;
+    document.getElementById("tt-ts").textContent     = info.updated_at
+      ? new Date(info.updated_at).toLocaleString() : "—";
+    document.getElementById("tt-size").textContent   = info.size_bytes
+      ? `${(info.size_bytes / 1024).toFixed(1)} KB` : "—";
+    document.getElementById("tt-dl").style.display = "block";
+    document.getElementById("tt-dl").onclick = () => downloadCell(cid);
+  } else {
+    document.getElementById("tt-author").textContent = "Not published yet";
+    document.getElementById("tt-ver").textContent    = "—";
+    document.getElementById("tt-ts").textContent     = "—";
+    document.getElementById("tt-size").textContent   = "—";
+    document.getElementById("tt-dl").style.display   = "none";
+  }
+
+  tt.classList.add("show");
+  positionTT(e);
+
+  // Highlight neighbours
+  const neighbours = LAYOUT.adjacency[cid] || [];
+  for (const nid of neighbours) {
+    const r = document.getElementById(`rect-${nid}`);
+    if (r) r.setAttribute("stroke", "#ffffff");
+  }
+}
+
+function onCellLeave(e) {
+  hoverCell = null;
+  ttCell    = null;
+  tt.classList.remove("show");
+
+  if (!LAYOUT) return;
+  const cid = e.currentTarget.dataset.cellId;
+  const neighbours = LAYOUT.adjacency[cid] || [];
+  for (const nid of neighbours) {
+    const r   = document.getElementById(`rect-${nid}`);
+    const def = LAYOUT.cells[nid];
+    if (r && def) r.setAttribute("stroke", LAYOUT.groups[def.group].color);
+  }
+}
+
+function onCellMove(e) { positionTT(e); }
+
+function positionTT(e) {
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + 200 > window.innerWidth)  x = e.clientX - 210;
+  if (y + 160 > window.innerHeight) y = e.clientY - 160;
+  tt.style.left = x + "px";
+  tt.style.top  = y + "px";
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Download
+// ──────────────────────────────────────────────────────────────────────────────
+
+function downloadCell(cellId) {
+  const token = prompt(`Enter your auth token to download cell ${cellId}:`);
+  if (!token) return;
+  const url = `${SERVER}/api/cells/${cellId}/download?token=${encodeURIComponent(token)}`;
+  const a   = Object.assign(document.createElement("a"),
+    { href: url, download: `cell_${cellId.replace(".", "_")}.blend` });
+  a.click();
+  clearChangedBadge(cellId);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Roster panel
+// ──────────────────────────────────────────────────────────────────────────────
+
+function buildRoster() {
+  if (!LAYOUT || !roster.length) return;
+  const container = document.getElementById("tab-roster");
+  container.innerHTML = "";
+
+  const byGroup = {};
+  for (const s of roster) {
+    const g = LAYOUT.cells[s.cell_id]?.group || "?";
+    if (!byGroup[g]) byGroup[g] = [];
+    byGroup[g].push(s);
+  }
+
+  for (const [grp, students] of Object.entries(byGroup).sort()) {
+    const colour = LAYOUT.groups[grp]?.color || "#aaa";
+    const div    = document.createElement("div");
+    div.className = "roster-group";
+    div.innerHTML = `
+      <div class="roster-group-label">
+        <div class="g-dot" style="background:${colour}"></div>
+        ${LAYOUT.groups[grp]?.label || grp}
+      </div>
+    `;
+    for (const s of students.sort((a,b) => a.cell_id.localeCompare(b.cell_id))) {
+      const info      = cells[s.cell_id];
+      const published = !!info;
+      const changed   = published && _changedSet.has(s.cell_id);
+
+      const row = document.createElement("div");
+      row.className = "roster-row";
+      row.id = `rrow-${s.cell_id}`;
+      row.innerHTML = `
+        <div class="r-cell">${s.cell_id}</div>
+        <div class="r-name">${s.display_name}</div>
+        <div class="r-badge ${changed ? "updated" : published ? "published" : ""}"></div>
+      `;
+      div.appendChild(row);
+    }
+    container.appendChild(div);
+  }
+}
+
+const _changedSet = new Set();
+
+function updateRosterRow(cellId, changed) {
+  const row = document.getElementById(`rrow-${cellId}`);
+  if (!row) return;
+  const badge = row.querySelector(".r-badge");
+  if (!badge) return;
+  badge.className = `r-badge ${changed ? "updated" : cells[cellId] ? "published" : ""}`;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Activity log
+// ──────────────────────────────────────────────────────────────────────────────
+
+const MAX_LOG = 80;
+
+function logEntry(type, user, desc, ts) {
+  const log  = document.getElementById("tab-log");
+  const time = ts ? new Date(ts).toLocaleTimeString() : "";
+  const div  = document.createElement("div");
+  div.className = "log-entry";
+  div.innerHTML = `
+    <div class="log-pip ${type}"></div>
+    <div>
+      <div class="log-user">${user}</div>
+      <div class="log-desc">${desc}</div>
+      <div class="log-time">${time}</div>
+    </div>
+  `;
+  log.prepend(div);
+  while (log.children.length > MAX_LOG) log.lastChild.remove();
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Stats
+// ──────────────────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  document.getElementById("s-active").textContent  = Object.keys(cells).length;
+  document.getElementById("s-updates").textContent = updateCount;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SSE
+// ──────────────────────────────────────────────────────────────────────────────
+
+function connectSSE() {
+  const dot   = document.getElementById("cdot");
+  const label = document.getElementById("clabel");
+  const src   = new EventSource(`${SERVER}/api/events`);
+
+  src.addEventListener("connected", () => {
+    dot.className    = "conn-dot live";
+    label.textContent = "Live";
+  });
+
+  src.addEventListener("cell_updated", e => {
+    const d = JSON.parse(e.data);
+    cells[d.cell_id] = d;
+    updateCellVisual(d.cell_id, d, true);
+    addChangedBadge(d.cell_id);
+    _changedSet.add(d.cell_id);
+    updateRosterRow(d.cell_id, true);
+    logEntry("update", d.display_name || d.username, `published ${d.cell_id}`, d.updated_at);
+    updateCount++;
+    updateStats();
+  });
+
+  src.addEventListener("user_registered", e => {
+    const d = JSON.parse(e.data);
+    logEntry("register", d.display_name || d.username, `connected → ${d.cell_id}`, new Date().toISOString());
+    fetch(`${SERVER}/api/users`)
+      .then(r => r.json())
+      .then(d => { document.getElementById("s-users").textContent = d.count; })
+      .catch(() => {});
+  });
+
+  src.addEventListener("cell_reset", e => {
+    const d = JSON.parse(e.data);
+    delete cells[d.cell_id];
+    _changedSet.delete(d.cell_id);
+    const rect = document.getElementById(`rect-${d.cell_id}`);
+    if (rect) {
+      rect.setAttribute("fill-opacity", "0.55");
+      rect.setAttribute("stroke-width", "0.5");
+    }
+    const nlbl = document.getElementById(`name-${d.cell_id}`);
+    if (nlbl) nlbl.textContent = "";
+    clearChangedBadge(d.cell_id);
+    updateRosterRow(d.cell_id, false);
+    logEntry("reset", "admin", `reset ${d.cell_id}`, new Date().toISOString());
+    updateStats();
+  });
+
+  src.onerror = () => {
+    dot.className     = "conn-dot";
+    label.textContent = "Reconnecting…";
+    setTimeout(connectSSE, 5000);
+    src.close();
+  };
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tabs
+// ──────────────────────────────────────────────────────────────────────────────
+
+document.querySelectorAll(".aside-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".aside-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".aside-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Toolbar toggles
+// ──────────────────────────────────────────────────────────────────────────────
+
+document.getElementById("chk-labels").addEventListener("change", e => {
+  document.getElementById("g-labels").style.display = e.target.checked ? "" : "none";
+});
+
+document.getElementById("chk-names").addEventListener("change", e => {
+  document.querySelectorAll(".cell-name").forEach(el => {
+    el.style.display = e.target.checked ? "" : "none";
+  });
+});
+
+document.getElementById("chk-grid").addEventListener("change", e => {
+  document.getElementById("g-grid").style.display = e.target.checked ? "" : "none";
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Clock
+// ──────────────────────────────────────────────────────────────────────────────
+
+setInterval(() => {
+  document.getElementById("fclock").textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Boot
+// ──────────────────────────────────────────────────────────────────────────────
+
+(async () => {
+  // 1. Fetch layout
+  try {
+    const r = await fetch(`${SERVER}/api/layout`);
+    LAYOUT  = await r.json();
+    document.getElementById("s-cells").textContent = Object.keys(LAYOUT.cells).length;
+  } catch (e) {
+    console.error("Layout fetch failed:", e);
+    return;
+  }
+
+  // 2. Build SVG map
+  buildMap();
+
+  // 3. Fetch current cell states
+  try {
+    const r = await fetch(`${SERVER}/api/cells`);
+    const d = await r.json();
+    for (const [k, v] of Object.entries(d.cells || {})) {
+      cells[k] = v;
+      updateCellVisual(k, v);
+    }
+    updateStats();
+  } catch (e) { console.error("Cells fetch failed:", e); }
+
+  // 4. Fetch roster
+  try {
+    const r = await fetch(`${SERVER}/api/roster`);
+    const d = await r.json();
+    roster  = d.students || [];
+    document.getElementById("s-users").textContent = roster.filter(s => s.active).length;
+    buildRoster();
+  } catch (e) { console.error("Roster fetch failed:", e); }
+
+  // 5. SSE
+  connectSSE();
+})();
+</script>
+</body>
+</html>

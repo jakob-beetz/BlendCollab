@@ -1,0 +1,100 @@
+{
+  "_comment": "BlenderCollab layout — B-Atelier site plan. All coordinates in metres, origin at bottom-left of the entire cell area. Each cell is 3×3 m. Groups: A1=pink, A2=blue, B1=green, B2=yellow.",
+
+  "parcel_size": 3.0,
+
+  "groups": {
+    "A1": { "color": "#e87ea1", "label": "Group A1" },
+    "A2": { "color": "#6db8d4", "label": "Group A2" },
+    "B1": { "color": "#7dba84", "label": "Group B1" },
+    "B2": { "color": "#c9c96a", "label": "Group B2" }
+  },
+
+  "cells": {
+    "A1.1": { "group": "A1", "origin": [3, 12], "col": 1, "row": 4 },
+    "A1.2": { "group": "A1", "origin": [6, 12], "col": 2, "row": 4 },
+    "A1.3": { "group": "A1", "origin": [3,  9], "col": 1, "row": 3 },
+    "A1.4": { "group": "A1", "origin": [6,  9], "col": 2, "row": 3 },
+    "A1.5": { "group": "A1", "origin": [9,  9], "col": 3, "row": 3 },
+    "A1.6": { "group": "A1", "origin": [12, 9], "col": 4, "row": 3 },
+    "A1.7": { "group": "A1", "origin": [9,  6], "col": 3, "row": 2 },
+    "A1.8": { "group": "A1", "origin": [12, 6], "col": 4, "row": 2 },
+    "A1.9": { "group": "A1", "origin": [15, 6], "col": 5, "row": 2 },
+
+    "A2.1": { "group": "A2", "origin": [15,  9], "col": 5, "row": 3 },
+    "A2.2": { "group": "A2", "origin": [18,  9], "col": 6, "row": 3 },
+    "A2.3": { "group": "A2", "origin": [21,  9], "col": 7, "row": 3 },
+    "A2.4": { "group": "A2", "origin": [24,  9], "col": 8, "row": 3 },
+    "A2.5": { "group": "A2", "origin": [15,  6], "col": 5, "row": 2 },
+    "A2.6": { "group": "A2", "origin": [18,  6], "col": 6, "row": 2 },
+    "A2.7": { "group": "A2", "origin": [21,  6], "col": 7, "row": 2 },
+    "A2.8": { "group": "A2", "origin": [24,  6], "col": 8, "row": 2 },
+
+    "B1.1": { "group": "B1", "origin": [3,  3], "col": 1, "row": 1 },
+    "B1.2": { "group": "B1", "origin": [9,  3], "col": 3, "row": 1 },
+    "B1.3": { "group": "B1", "origin": [12, 3], "col": 4, "row": 1 },
+    "B1.4": { "group": "B1", "origin": [3,  0], "col": 1, "row": 0 },
+    "B1.5": { "group": "B1", "origin": [6,  0], "col": 2, "row": 0 },
+    "B1.6": { "group": "B1", "origin": [9,  0], "col": 3, "row": 0 },
+    "B1.7": { "group": "B1", "origin": [12, 0], "col": 4, "row": 0 },
+    "B1.8": { "group": "B1", "origin": [6, -3], "col": 2, "row": -1 },
+    "B1.9": { "group": "B1", "origin": [9, -3], "col": 3, "row": -1 },
+
+    "B2.1": { "group": "B2", "origin": [27,  6], "col": 9, "row": 2 },
+    "B2.2": { "group": "B2", "origin": [27,  3], "col": 9, "row": 1 },
+    "B2.3": { "group": "B2", "origin": [21,  0], "col": 7, "row": 0 },
+    "B2.4": { "group": "B2", "origin": [24,  0], "col": 8, "row": 0 },
+    "B2.5": { "group": "B2", "origin": [27,  0], "col": 9, "row": 0 },
+    "B2.6": { "group": "B2", "origin": [21, -3], "col": 7, "row": -1 },
+    "B2.7": { "group": "B2", "origin": [24, -3], "col": 8, "row": -1 },
+    "B2.8": { "group": "B2", "origin": [27, -3], "col": 9, "row": -1 }
+  },
+
+  "adjacency": {
+    "A1.1": ["A1.2", "A1.3", "A1.4"],
+    "A1.2": ["A1.1", "A1.4", "A1.5"],
+    "A1.3": ["A1.1", "A1.4", "A1.2", "B1.1"],
+    "A1.4": ["A1.3", "A1.1", "A1.2", "A1.5"],
+    "A1.5": ["A1.4", "A1.6", "A1.2", "A1.7", "A1.8"],
+    "A1.6": ["A1.5", "A2.1", "A1.8"],
+    "A1.7": ["A1.5", "A1.8", "A1.9", "B1.2"],
+    "A1.8": ["A1.7", "A1.5", "A1.6", "A1.9", "B1.3"],
+    "A1.9": ["A1.8", "A1.7", "A2.5", "B1.3"],
+
+    "A2.1": ["A1.6", "A2.2", "A2.5", "A2.6"],
+    "A2.2": ["A2.1", "A2.3", "A2.6", "A2.7"],
+    "A2.3": ["A2.2", "A2.4", "A2.7", "A2.8"],
+    "A2.4": ["A2.3", "A2.8"],
+    "A2.5": ["A1.9", "A2.1", "A2.6", "B1.3", "B2.1"],
+    "A2.6": ["A2.5", "A2.1", "A2.2", "A2.7", "B2.1"],
+    "A2.7": ["A2.6", "A2.2", "A2.3", "A2.8", "B2.2"],
+    "A2.8": ["A2.7", "A2.3", "A2.4", "B2.2"],
+
+    "B1.1": ["A1.3", "B1.2", "B1.4", "B1.5"],
+    "B1.2": ["A1.7", "B1.1", "B1.3", "B1.5", "B1.6"],
+    "B1.3": ["A1.8", "A1.9", "A2.5", "B1.2", "B1.6", "B1.7"],
+    "B1.4": ["B1.1", "B1.5", "B1.8"],
+    "B1.5": ["B1.4", "B1.1", "B1.2", "B1.6", "B1.8", "B1.9"],
+    "B1.6": ["B1.5", "B1.2", "B1.3", "B1.7", "B1.9"],
+    "B1.7": ["B1.6", "B1.3", "B1.9", "B2.3"],
+    "B1.8": ["B1.4", "B1.5", "B1.9"],
+    "B1.9": ["B1.8", "B1.5", "B1.6", "B1.7"],
+
+    "B2.1": ["A2.5", "A2.6", "B2.2"],
+    "B2.2": ["B2.1", "A2.7", "A2.8", "B2.3", "B2.4", "B2.5"],
+    "B2.3": ["B1.7", "B2.2", "B2.4", "B2.6", "B2.7"],
+    "B2.4": ["B2.3", "B2.2", "B2.5", "B2.7", "B2.8"],
+    "B2.5": ["B2.4", "B2.2", "B2.8"],
+    "B2.6": ["B2.3", "B2.7"],
+    "B2.7": ["B2.6", "B2.3", "B2.4", "B2.8"],
+    "B2.8": ["B2.7", "B2.4", "B2.5"]
+  },
+
+  "site_bounds": {
+    "_comment": "Bounding box of entire cell area in metres for SVG scaling",
+    "min_x": 3,
+    "min_y": -3,
+    "max_x": 30,
+    "max_y": 15
+  }
+}

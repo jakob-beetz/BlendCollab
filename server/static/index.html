@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BlenderCollab · B-Atelier</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0b0c10; --surface:#12141a; --surface2:#191c25; --border:#22263a;
+  --text:#dde0f0; --text2:#6b7090;
+  --mono:'IBM Plex Mono',monospace; --sans:'Syne',sans-serif;
+  --accent:#c8f060; --warn:#ffcc44; --danger:#ff5566;
+  --g-A1:#e87ea1; --g-A2:#6db8d4; --g-B1:#7dba84; --g-B2:#c9c96a;
+}
+body {
+  background:var(--bg); color:var(--text); font-family:var(--sans);
+  height:100vh;
+  display:grid;
+  grid-template-rows:52px 1fr 36px;
+  grid-template-columns:1fr 340px;
+  grid-template-areas:"header header" "main sidebar" "footer footer";
+  overflow:hidden;
+}
+/* Header */
+header {
+  grid-area:header; background:var(--surface); border-bottom:1px solid var(--border);
+  display:flex; align-items:center; padding:0 24px; gap:20px;
+}
+.brand { display:flex; align-items:center; gap:10px; }
+.hex {
+  width:26px; height:26px; background:var(--accent);
+  clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+.brand-name { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--accent); letter-spacing:.1em; }
+.brand-sub  { font-size:10px; color:var(--text2); font-family:var(--mono); }
+.hstats { display:flex; gap:20px; margin-left:20px; }
+.hs { text-align:center; }
+.hs-v { font-family:var(--mono); font-size:17px; font-weight:600; color:var(--accent); line-height:1; }
+.hs-l { font-size:9px; color:var(--text2); text-transform:uppercase; letter-spacing:.1em; margin-top:2px; }
+.view-tabs { display:flex; gap:4px; margin-left:auto; }
+.vtab {
+  padding:5px 14px; border-radius:4px; font-family:var(--mono); font-size:10px;
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer; color:var(--text2);
+  border:1px solid var(--border); background:transparent; transition:.15s;
+}
+.vtab.active { color:var(--accent); border-color:var(--accent); background:rgba(200,240,96,.08); }
+.conn-pill {
+  display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px;
+  color:var(--text2); background:var(--surface2); border:1px solid var(--border);
+  border-radius:20px; padding:4px 12px;
+}
+.cdot { width:7px; height:7px; border-radius:50%; background:var(--text2); transition:.3s; }
+.cdot.live { background:var(--accent); box-shadow:0 0 7px var(--accent); }
+
+/* Main */
+main { grid-area:main; position:relative; overflow:hidden; }
+#view3d { width:100%; height:100%; display:block; }
+#view-plan {
+  position:absolute; inset:0; display:none; background:var(--surface);
+  padding:20px; overflow:auto; flex-direction:column; gap:12px;
+}
+#view-plan.active { display:flex; }
+
+.plan-toolbar { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.plan-toolbar h2 { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--text2); }
+.plan-toolbar label { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text2); cursor:pointer; }
+.plan-toolbar input { accent-color:var(--accent); }
+.legend { margin-left:auto; display:flex; gap:12px; }
+.legend-item { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text2); font-family:var(--mono); }
+.legend-sw { width:11px; height:11px; border-radius:2px; }
+.plan-frame { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+#site-svg { width:100%; height:100%; display:block; }
+.cell-rect { cursor:pointer; transition:opacity .15s; }
+.cell-rect:hover { opacity:.7; }
+.cell-rect.updated { animation:cflash .7s ease-out; }
+@keyframes cflash { 0%{filter:brightness(2.5)}100%{filter:none} }
+.cell-label { font-family:var(--mono); font-size:5.5px; font-weight:600; fill:rgba(0,0,0,.7); pointer-events:none; }
+.cell-name  { font-family:var(--mono); font-size:4px; fill:rgba(0,0,0,.55); pointer-events:none; }
+.cell-badge { pointer-events:none; }
+.grid-line  { stroke:#1d2030; stroke-width:.15; stroke-dasharray:1 1; }
+
+#pipeline-overlay {
+  position:absolute; bottom:16px; left:16px;
+  display:flex; flex-direction:column; gap:6px; pointer-events:none;
+}
+.pipe-badge {
+  background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+  padding:6px 12px; font-family:var(--mono); font-size:10px; color:var(--warn);
+  display:flex; align-items:center; gap:8px;
+  animation:fadein .3s ease-out;
+}
+@keyframes fadein { from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none} }
+.pipe-spinner {
+  width:10px; height:10px; border-radius:50%;
+  border:2px solid transparent; border-top-color:var(--warn);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* Sidebar */
+aside { grid-area:sidebar; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+.tab-bar { display:flex; border-bottom:1px solid var(--border); flex-shrink:0; }
+.stab {
+  flex:1; padding:10px; text-align:center; font-family:var(--mono);
+  font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--text2); cursor:pointer; border-bottom:2px solid transparent; transition:.2s;
+}
+.stab.active { color:var(--accent); border-bottom-color:var(--accent); }
+.scontent { flex:1; overflow-y:auto; display:none; }
+.scontent.active { display:block; }
+.scontent::-webkit-scrollbar { width:3px; }
+.scontent::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.log-entry {
+  display:grid; grid-template-columns:8px 1fr; gap:10px;
+  padding:10px 16px; border-bottom:1px solid rgba(255,255,255,.03);
+  animation:fadein .3s ease-out;
+}
+.lpip { width:8px; height:8px; border-radius:50%; margin-top:3px; }
+.lpip.update   { background:var(--accent); }
+.lpip.pipeline { background:var(--warn); }
+.lpip.register { background:#7b9eff; }
+.lpip.reset    { background:var(--danger); }
+.luser { font-family:var(--mono); font-size:11px; font-weight:600; }
+.ldesc { font-size:11px; color:var(--text2); margin-top:2px; line-height:1.4; }
+.ltime { font-family:var(--mono); font-size:9px; color:var(--text2); margin-top:3px; }
+
+.rgroup { padding:10px 16px 4px; }
+.rgroup-label {
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text2); margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:6px;
+}
+.gdot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+.rrow { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:11px; border-bottom:1px solid rgba(255,255,255,.02); }
+.rcell { font-family:var(--mono); font-size:10px; color:var(--text2); width:42px; flex-shrink:0; }
+.rname { flex:1; }
+.rbadge { width:7px; height:7px; border-radius:50%; background:var(--text2); flex-shrink:0; }
+.rbadge.published { background:var(--accent); box-shadow:0 0 4px var(--accent); }
+.rbadge.updated   { background:var(--warn); box-shadow:0 0 4px var(--warn); }
+.rbadge.pipeline  { background:var(--warn); border-radius:0; animation:spin .8s linear infinite; }
+
+.tt {
+  position:fixed; background:var(--surface2); border:1px solid var(--border);
+  border-radius:7px; padding:12px 15px; pointer-events:none; z-index:1000;
+  display:none; min-width:180px; box-shadow:0 12px 30px rgba(0,0,0,.6);
+}
+.tt.show { display:block; }
+.tt-id  { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--accent); margin-bottom:6px; }
+.tt-row { font-size:11px; color:var(--text2); margin-top:3px; }
+.tt-row span { color:var(--text); }
+.tt-pipe { font-size:10px; color:var(--warn); margin-top:4px; font-family:var(--mono); }
+
+footer {
+  grid-area:footer; background:var(--surface); border-top:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; font-family:var(--mono); font-size:10px; color:var(--text2);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="hex"></div>
+    <div><div class="brand-name">BLENDERCOLLAB</div><div class="brand-sub">B-Atelier · v3</div></div>
+  </div>
+  <div class="hstats">
+    <div class="hs"><div class="hs-v" id="s-pub">0</div><div class="hs-l">Published</div></div>
+    <div class="hs"><div class="hs-v" id="s-glb">0</div><div class="hs-l">3D Ready</div></div>
+    <div class="hs"><div class="hs-v" id="s-pipe">0</div><div class="hs-l">Processing</div></div>
+    <div class="hs"><div class="hs-v" id="s-cells">—</div><div class="hs-l">Cells</div></div>
+  </div>
+  <div class="view-tabs">
+    <button class="vtab active" data-view="3d">3D View</button>
+    <button class="vtab" data-view="plan">Site Plan</button>
+  </div>
+  <div class="conn-pill">
+    <div class="cdot" id="cdot"></div>
+    <span id="clabel">Connecting…</span>
+  </div>
+</header>
+
+<main>
+  <canvas id="view3d"></canvas>
+  <div id="pipeline-overlay"></div>
+  <div id="view-plan">
+    <div class="plan-toolbar">
+      <h2>Site Plan · 1:1 scale</h2>
+      <label><input type="checkbox" id="chk-labels" checked> Labels</label>
+      <label><input type="checkbox" id="chk-names" checked> Names</label>
+      <label><input type="checkbox" id="chk-grid"> Grid</label>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-sw" style="background:var(--g-A1)"></div>A1</div>
+        <div class="legend-item"><div class="legend-sw" style="background:var(--g-A2)"></div>A2</div>
+        <div class="legend-item"><div class="legend-sw" style="background:var(--g-B1)"></div>B1</div>
+        <div class="legend-item"><div class="legend-sw" style="background:var(--g-B2)"></div>B2</div>
+      </div>
+    </div>
+    <div class="plan-frame">
+      <svg id="site-svg" viewBox="0 0 300 200" preserveAspectRatio="xMidYMid meet">
+        <g id="g-grid"></g><g id="g-cells"></g><g id="g-labels"></g>
+      </svg>
+    </div>
+  </div>
+</main>
+
+<aside>
+  <div class="tab-bar">
+    <div class="stab active" data-tab="log">Activity</div>
+    <div class="stab" data-tab="roster">Roster</div>
+  </div>
+  <div class="scontent active" id="tab-log"></div>
+  <div class="scontent" id="tab-roster"></div>
+</aside>
+
+<footer>
+  <span>BlenderCollab v3 · FastAPI + SSE + Three.js</span>
+  <span id="fclock"></span>
+</footer>
+
+<div class="tt" id="tt">
+  <div class="tt-id" id="tt-id">—</div>
+  <div class="tt-row">Group: <span id="tt-group">—</span></div>
+  <div class="tt-row">Author: <span id="tt-author">—</span></div>
+  <div class="tt-row">Version: <span id="tt-ver">—</span></div>
+  <div class="tt-row">Updated: <span id="tt-ts">—</span></div>
+  <div class="tt-pipe" id="tt-pipe" style="display:none">⟳ Pipeline running…</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const SERVER = window.location.origin;
+let LAYOUT = null, cells = {}, roster = [], updateCount = 0;
+const pipelinePending = new Set();
+
+// ── Three.js ─────────────────────────────────────────────────────────────────
+const canvas   = document.getElementById("view3d");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.setClearColor(0x0b0c10);
+
+const scene3d = new THREE.Scene();
+const camera  = new THREE.PerspectiveCamera(45, 1, 0.1, 500);
+
+scene3d.add(new THREE.AmbientLight(0xffffff, 0.7));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(20, 40, 20); sun.castShadow = true;
+scene3d.add(sun);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(80, 60),
+  new THREE.MeshLambertMaterial({ color: 0x12141a })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.set(16, -0.01, -7);
+ground.receiveShadow = true;
+scene3d.add(ground);
+
+// Orbit state
+let isDragging=false, lastX=0, lastY=0;
+let theta=0.6, phi=0.75, radius=52;
+const target = new THREE.Vector3(16, 0, -7);
+
+function updateCam() {
+  camera.position.set(
+    target.x + radius * Math.sin(phi) * Math.sin(theta),
+    target.y + radius * Math.cos(phi),
+    target.z + radius * Math.sin(phi) * Math.cos(theta)
+  );
+  camera.lookAt(target);
+}
+updateCam();
+
+canvas.addEventListener("mousedown", e => { isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener("mouseup",   () => isDragging=false);
+window.addEventListener("mousemove", e => {
+  if (!isDragging) return;
+  theta -= (e.clientX-lastX)*.005;
+  phi    = Math.max(.1, Math.min(Math.PI/2-.05, phi-(e.clientY-lastY)*.005));
+  lastX=e.clientX; lastY=e.clientY; updateCam();
+});
+canvas.addEventListener("wheel", e => {
+  radius = Math.max(8, Math.min(120, radius+e.deltaY*.05));
+  updateCam();
+}, { passive:true });
+
+// Render loop
+(function animate() {
+  requestAnimationFrame(animate);
+  const w=canvas.clientWidth, h=canvas.clientHeight;
+  if (canvas.width!==w||canvas.height!==h) {
+    renderer.setSize(w,h,false);
+    camera.aspect=w/h; camera.updateProjectionMatrix();
+  }
+  renderer.render(scene3d, camera);
+})();
+
+// Cell floor plates
+const cellPlates = {}, cell3dObjects = {};
+
+function hexToInt(h) { return parseInt(h.replace("#",""),16); }
+
+function buildCellPlates() {
+  if (!LAYOUT) return;
+  const S = LAYOUT.parcel_size;
+  for (const [cid, cdef] of Object.entries(LAYOUT.cells)) {
+    const [ox,oy] = cdef.origin;
+    const colour  = hexToInt(LAYOUT.groups[cdef.group].color);
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(S-.08, S-.08),
+      new THREE.MeshLambertMaterial({ color:colour, transparent:true, opacity:.18 })
+    );
+    mesh.rotation.x = -Math.PI/2;
+    // Three.js: world X = blend X, world Z = -blend Y
+    mesh.position.set(ox+S/2, .001, -(oy+S/2));
+    mesh.userData.cellId = cid;
+    scene3d.add(mesh);
+    cellPlates[cid] = mesh;
+
+    const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(S-.04,.01,S-.04));
+    const line  = new THREE.LineSegments(edges,
+      new THREE.LineBasicMaterial({ color:colour, opacity:.4, transparent:true }));
+    line.position.set(ox+S/2, .005, -(oy+S/2));
+    scene3d.add(line);
+  }
+}
+
+// GLTFLoader — loaded from CDN
+let GLTFLoader = null;
+function loadGLTFLoader() {
+  return new Promise(resolve => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js";
+    s.onload  = () => { GLTFLoader = THREE.GLTFLoader; resolve(); };
+    s.onerror = () => { console.warn("GLTFLoader unavailable"); resolve(); };
+    document.head.appendChild(s);
+  });
+}
+
+function loadCellGLB(cellId, glbUrl) {
+  if (!GLTFLoader) return;
+  if (cell3dObjects[cellId]) {
+    scene3d.remove(cell3dObjects[cellId]);
+    delete cell3dObjects[cellId];
+  }
+  const cdef = LAYOUT?.cells[cellId]; if (!cdef) return;
+  const [ox,oy] = cdef.origin;
+  new GLTFLoader().load(
+    glbUrl,
+    gltf => {
+      const model = gltf.scene;
+      model.position.set(ox, 0, -oy);
+      model.traverse(obj => {
+        if (obj.isMesh) { obj.castShadow=true; obj.receiveShadow=true; }
+      });
+      scene3d.add(model);
+      cell3dObjects[cellId] = model;
+      if (cellPlates[cellId]) cellPlates[cellId].material.opacity = .45;
+    },
+    undefined,
+    err => console.warn(`GLB failed ${cellId}:`, err)
+  );
+}
+
+// ── SVG map ───────────────────────────────────────────────────────────────────
+const NS = "http://www.w3.org/2000/svg";
+const SVG_SCALE=8, SVG_PAD=10;
+
+function m2s(x,y) {
+  const b=LAYOUT.site_bounds;
+  return [SVG_PAD+(x-b.min_x)*SVG_SCALE, SVG_PAD+(b.max_y-y)*SVG_SCALE];
+}
+
+function buildSVGMap() {
+  const b=LAYOUT.site_bounds, S=LAYOUT.parcel_size;
+  const W=(b.max_x-b.min_x)*SVG_SCALE+SVG_PAD*2, H=(b.max_y-b.min_y)*SVG_SCALE+SVG_PAD*2;
+  document.getElementById("site-svg").setAttribute("viewBox",`0 0 ${W} ${H}`);
+
+  const gC=document.getElementById("g-cells");
+  const gL=document.getElementById("g-labels");
+  const gG=document.getElementById("g-grid");
+  gC.innerHTML=gL.innerHTML=gG.innerHTML="";
+
+  for (let x=b.min_x;x<=b.max_x;x+=S) {
+    const [x1,y1]=m2s(x,b.min_y),[x2,y2]=m2s(x,b.max_y);
+    const l=document.createElementNS(NS,"line");
+    l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+    l.setAttribute("class","grid-line"); gG.appendChild(l);
+  }
+  for (let y=b.min_y;y<=b.max_y;y+=S) {
+    const [x1,y1]=m2s(b.min_x,y),[x2,y2]=m2s(b.max_x,y);
+    const l=document.createElementNS(NS,"line");
+    l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+    l.setAttribute("class","grid-line"); gG.appendChild(l);
+  }
+  gG.style.display="none";
+
+  for (const [cid,cdef] of Object.entries(LAYOUT.cells)) {
+    const [ox,oy]=cdef.origin, [sx,sy]=m2s(ox,oy+S);
+    const sw=S*SVG_SCALE, sh=S*SVG_SCALE;
+    const colour=LAYOUT.groups[cdef.group].color;
+
+    const rect=document.createElementNS(NS,"rect");
+    rect.setAttribute("x",sx); rect.setAttribute("y",sy);
+    rect.setAttribute("width",sw); rect.setAttribute("height",sh);
+    rect.setAttribute("fill",colour); rect.setAttribute("fill-opacity","0.55");
+    rect.setAttribute("stroke",colour); rect.setAttribute("stroke-width","0.5");
+    rect.setAttribute("rx","1"); rect.setAttribute("class","cell-rect");
+    rect.dataset.cellId=cid; rect.id=`rect-${cid}`;
+    rect.addEventListener("mouseenter",onSVGEnter);
+    rect.addEventListener("mouseleave",onSVGLeave);
+    rect.addEventListener("mousemove", onSVGMove);
+    gC.appendChild(rect);
+
+    const lbl=document.createElementNS(NS,"text");
+    lbl.setAttribute("x",sx+sw*.5); lbl.setAttribute("y",sy+sh*.38);
+    lbl.setAttribute("text-anchor","middle"); lbl.setAttribute("class","cell-label");
+    lbl.id=`lbl-${cid}`; lbl.textContent=cid; gL.appendChild(lbl);
+
+    const nlbl=document.createElementNS(NS,"text");
+    nlbl.setAttribute("x",sx+sw*.5); nlbl.setAttribute("y",sy+sh*.65);
+    nlbl.setAttribute("text-anchor","middle"); nlbl.setAttribute("class","cell-name");
+    nlbl.id=`name-${cid}`; nlbl.textContent=""; gL.appendChild(nlbl);
+  }
+}
+
+function updateSVGCell(cid, info, flash=false) {
+  const rect=document.getElementById(`rect-${cid}`);
+  const nlbl=document.getElementById(`name-${cid}`);
+  if (!rect) return;
+  rect.setAttribute("fill-opacity","0.80"); rect.setAttribute("stroke-width","1.2");
+  if (nlbl&&info) { const dn=info.display_name||info.username||""; nlbl.textContent=dn.length>10?dn.slice(0,9)+"…":dn; }
+  if (flash) { rect.classList.remove("updated"); void rect.offsetWidth; rect.classList.add("updated"); }
+}
+
+function addBadge(cid) {
+  if (document.getElementById(`badge-${cid}`)) return;
+  const gL=document.getElementById("g-labels"), cdef=LAYOUT?.cells[cid]; if (!cdef) return;
+  const [ox,oy]=cdef.origin, [sx,sy]=m2s(ox,oy+LAYOUT.parcel_size), sw=LAYOUT.parcel_size*SVG_SCALE;
+  const c=document.createElementNS(NS,"circle");
+  c.setAttribute("cx",sx+sw-3); c.setAttribute("cy",sy+3); c.setAttribute("r","2.5");
+  c.setAttribute("fill","#ffcc44"); c.id=`badge-${cid}`; c.setAttribute("class","cell-badge");
+  gL.appendChild(c);
+}
+
+// SVG tooltip
+const tt=document.getElementById("tt");
+function onSVGEnter(e) {
+  const cid=e.currentTarget.dataset.cellId, info=cells[cid];
+  document.getElementById("tt-id").textContent=cid;
+  document.getElementById("tt-group").textContent=LAYOUT?.cells[cid]?.group||"—";
+  if (info) {
+    document.getElementById("tt-author").textContent=info.display_name||info.username||"—";
+    document.getElementById("tt-ver").textContent=`v${info.version||1}`;
+    document.getElementById("tt-ts").textContent=info.updated_at?new Date(info.updated_at).toLocaleString():"—";
+    document.getElementById("tt-pipe").style.display=pipelinePending.has(cid)?"block":"none";
+  } else {
+    document.getElementById("tt-author").textContent="Not published";
+    document.getElementById("tt-ver").textContent="—";
+    document.getElementById("tt-ts").textContent="—";
+    document.getElementById("tt-pipe").style.display="none";
+  }
+  (LAYOUT?.adjacency[cid]||[]).forEach(nid=>{const r=document.getElementById(`rect-${nid}`);if(r)r.setAttribute("stroke","#fff");});
+  tt.classList.add("show"); posTT(e);
+}
+function onSVGLeave(e) {
+  tt.classList.remove("show");
+  const cid=e.currentTarget.dataset.cellId;
+  (LAYOUT?.adjacency[cid]||[]).forEach(nid=>{
+    const r=document.getElementById(`rect-${nid}`), def=LAYOUT?.cells[nid];
+    if(r&&def) r.setAttribute("stroke",LAYOUT.groups[def.group].color);
+  });
+}
+function onSVGMove(e){posTT(e);}
+function posTT(e){
+  let x=e.clientX+14,y=e.clientY+14;
+  if(x+200>window.innerWidth)x=e.clientX-210;
+  if(y+150>window.innerHeight)y=e.clientY-150;
+  tt.style.left=x+"px"; tt.style.top=y+"px";
+}
+
+// ── Pipeline badges ───────────────────────────────────────────────────────────
+function addPipelineBadge(cellId, username) {
+  pipelinePending.add(cellId);
+  const overlay=document.getElementById("pipeline-overlay");
+  let el=document.getElementById(`pipe-${cellId}`);
+  if (!el) { el=document.createElement("div"); el.className="pipe-badge"; el.id=`pipe-${cellId}`; overlay.appendChild(el); }
+  el.innerHTML=`<div class="pipe-spinner"></div> ${cellId} · ${username} — processing…`;
+  document.getElementById("s-pipe").textContent=pipelinePending.size;
+}
+function removePipelineBadge(cellId) {
+  pipelinePending.delete(cellId);
+  const el=document.getElementById(`pipe-${cellId}`); if(el)el.remove();
+  document.getElementById("s-pipe").textContent=pipelinePending.size;
+}
+
+// ── SSE ───────────────────────────────────────────────────────────────────────
+function connectSSE() {
+  const dot=document.getElementById("cdot"), lbl=document.getElementById("clabel");
+  const src=new EventSource(`${SERVER}/api/events`);
+  src.addEventListener("connected",()=>{ dot.className="cdot live"; lbl.textContent="Live"; });
+
+  src.addEventListener("cell_updated", e => {
+    const d=JSON.parse(e.data);
+    cells[d.cell_id]=d;
+    updateSVGCell(d.cell_id,d,true);
+    addBadge(d.cell_id);
+    if (d.pipeline==="pending") addPipelineBadge(d.cell_id, d.display_name||d.username);
+    logEntry("update",d.display_name||d.username,`published ${d.cell_id}`,d.updated_at);
+    updateStats(); updateRosterRow(d.cell_id,true);
+  });
+
+  src.addEventListener("cell_pipeline_done", e => {
+    const d=JSON.parse(e.data);
+    cells[d.cell_id]=d;
+    removePipelineBadge(d.cell_id);
+    updateSVGCell(d.cell_id,d);
+    logEntry("pipeline",d.display_name||d.username,`3D ready · ${d.cell_id}`,d.updated_at);
+    if (d.has_glb) {
+      loadCellGLB(d.cell_id,`${SERVER}/api/cells/${d.cell_id}/glb`);
+    }
+    updateStats(); updateRosterRow(d.cell_id,false);
+  });
+
+  src.addEventListener("user_registered", e => {
+    const d=JSON.parse(e.data);
+    logEntry("register",d.display_name||d.username,`connected → ${d.cell_id}`,new Date().toISOString());
+  });
+
+  src.addEventListener("cell_reset", e => {
+    const d=JSON.parse(e.data); delete cells[d.cell_id]; removePipelineBadge(d.cell_id);
+    const rect=document.getElementById(`rect-${d.cell_id}`);
+    if(rect){rect.setAttribute("fill-opacity","0.55");rect.setAttribute("stroke-width","0.5");}
+    const nlbl=document.getElementById(`name-${d.cell_id}`); if(nlbl)nlbl.textContent="";
+    if(cell3dObjects[d.cell_id]){scene3d.remove(cell3dObjects[d.cell_id]);delete cell3dObjects[d.cell_id];}
+    logEntry("reset","admin",`reset ${d.cell_id}`,new Date().toISOString());
+    updateStats();
+  });
+
+  src.onerror=()=>{ dot.className="cdot"; lbl.textContent="Reconnecting…"; setTimeout(connectSSE,5000); src.close(); };
+}
+
+// ── Stats / roster / log ──────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById("s-pub").textContent=Object.keys(cells).length;
+  document.getElementById("s-glb").textContent=Object.values(cells).filter(c=>c.has_glb).length;
+  document.getElementById("s-pipe").textContent=pipelinePending.size;
+}
+
+const _changed=new Set();
+function logEntry(type,user,desc,ts) {
+  const log=document.getElementById("tab-log"), time=ts?new Date(ts).toLocaleTimeString():"";
+  const div=document.createElement("div"); div.className="log-entry";
+  div.innerHTML=`<div class="lpip ${type}"></div><div><div class="luser">${user}</div><div class="ldesc">${desc}</div><div class="ltime">${time}</div></div>`;
+  log.prepend(div);
+  while(log.children.length>80)log.lastChild.remove();
+}
+
+function buildRoster() {
+  if(!LAYOUT||!roster.length) return;
+  const container=document.getElementById("tab-roster"); container.innerHTML="";
+  const byGroup={};
+  for (const s of roster) {
+    const g=LAYOUT.cells[s.cell_id]?.group||"?";
+    if(!byGroup[g])byGroup[g]=[];
+    byGroup[g].push(s);
+  }
+  for (const [grp,students] of Object.entries(byGroup).sort()) {
+    const colour=LAYOUT.groups[grp]?.color||"#aaa";
+    const div=document.createElement("div"); div.className="rgroup";
+    div.innerHTML=`<div class="rgroup-label"><div class="gdot" style="background:${colour}"></div>${LAYOUT.groups[grp]?.label||grp}</div>`;
+    for (const s of students.sort((a,b)=>a.cell_id.localeCompare(b.cell_id))) {
+      const published=!!cells[s.cell_id], changed=_changed.has(s.cell_id), pipeline=pipelinePending.has(s.cell_id);
+      const row=document.createElement("div"); row.className="rrow"; row.id=`rrow-${s.cell_id}`;
+      row.innerHTML=`<div class="rcell">${s.cell_id}</div><div class="rname">${s.display_name}</div><div class="rbadge ${pipeline?"pipeline":changed?"updated":published?"published":""}"></div>`;
+      div.appendChild(row);
+    }
+    container.appendChild(div);
+  }
+}
+
+function updateRosterRow(cellId,changed) {
+  const row=document.getElementById(`rrow-${cellId}`); if(!row) return;
+  const badge=row.querySelector(".rbadge"); if(!badge) return;
+  const pipeline=pipelinePending.has(cellId);
+  badge.className=`rbadge ${pipeline?"pipeline":changed?"updated":cells[cellId]?"published":""}`;
+  if(changed)_changed.add(cellId);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".vtab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".vtab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    const v=tab.dataset.view;
+    canvas.style.display=v==="3d"?"block":"none";
+    document.getElementById("pipeline-overlay").style.display=v==="3d"?"":"none";
+    document.getElementById("view-plan").classList.toggle("active",v==="plan");
+  });
+});
+document.querySelectorAll(".stab").forEach(tab=>{
+  tab.addEventListener("click",()=>{
+    document.querySelectorAll(".stab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".scontent").forEach(c=>c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(`tab-${tab.dataset.tab}`).classList.add("active");
+  });
+});
+document.getElementById("chk-labels").addEventListener("change",e=>document.getElementById("g-labels").style.display=e.target.checked?"":"none");
+document.getElementById("chk-names").addEventListener("change",e=>document.querySelectorAll(".cell-name").forEach(el=>el.style.display=e.target.checked?"":"none"));
+document.getElementById("chk-grid").addEventListener("change",e=>document.getElementById("g-grid").style.display=e.target.checked?"":"none");
+
+setInterval(()=>{ document.getElementById("fclock").textContent=new Date().toLocaleTimeString(); },1000);
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(async()=>{
+  await loadGLTFLoader();
+
+  try {
+    const r=await fetch(`${SERVER}/api/layout`);
+    LAYOUT=await r.json();
+    document.getElementById("s-cells").textContent=Object.keys(LAYOUT.cells).length;
+  } catch(e){ console.error("Layout failed:",e); return; }
+
+  buildCellPlates();
+  buildSVGMap();
+
+  try {
+    const r=await fetch(`${SERVER}/api/scene.json`);
+    const d=await r.json();
+    for (const cell of d.cells) {
+      if (cell.published) {
+        cells[cell.cell_id]=cell;
+        updateSVGCell(cell.cell_id,cell);
+        if (cell.has_glb&&cell.glb_url) loadCellGLB(cell.cell_id,cell.glb_url);
+      }
+    }
+    updateStats();
+  } catch(e){ console.error("scene.json failed:",e); }
+
+  try {
+    const r=await fetch(`${SERVER}/api/roster`);
+    const d=await r.json();
+    roster=d.students||[]; buildRoster();
+  } catch(e){ console.error("Roster failed:",e); }
+
+  connectSSE();
+})();
+</script>
+</body>
+</html>
