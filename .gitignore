@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+.python-version
+
+# Runtime data (bind-mounted on server, not tracked)
+server/models/
+server/assets/
+server/snapshots/
+server/state.json
+server/uv.lock
+
+# Blender scratch files
+*.blend1
+*.blend2
+
+# Archives
+archive/
+
+# Misc
+.DS_Store
