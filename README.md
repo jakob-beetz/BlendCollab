@@ -1,26 +1,33 @@
-# BlenderCollab v2 — B-Atelier Site Plan System
+# BlenderCollab v3 — B-Atelier Site Plan System
 
 Collaborative Blender environment for **34 students** working on 1:1 scale art
 installations on the real B-Atelier plot. Cells are named by group + position
 (`A1.3`, `B2.7`, etc.), assigned by the instructor via `roster.json`.
+
+The server is built on **FastAPI** and runs in a **Docker** container with
+**Blender 5.x** headless for server-side GLB export.
 
 ---
 
 ## Directory Structure
 
 ```
-blender_collab_v2/
+BlendColab/
+├── Dockerfile               ← Blender 5.x + Python 3.11 image
 ├── server/
-│   ├── app.py               ← Flask server
+│   ├── app.py               ← FastAPI server (v3)
+│   ├── process_cell.py      ← Headless Blender pipeline script
 │   ├── requirements.txt
-│   ├── layout.json          ← Cell coordinates + adjacency graph (edit to match real survey data)
+│   ├── layout.json          ← Cell coordinates + adjacency graph
 │   ├── roster.json          ← Instructor-controlled: username → cell assignment
 │   ├── state.json           ← Auto-created: tokens + published cell metadata
-│   ├── models/              ← Auto-created: .blend files per cell
+│   ├── models/              ← Auto-created: raw .blend uploads per cell
+│   ├── assets/              ← Auto-created: _assets.blend + .glb per cell
+│   ├── snapshots/           ← Auto-created: daily .tar.gz environment snapshots
 │   └── static/
-│       └── index.html       ← SVG site plan dashboard
+│       └── index.html       ← Three.js site plan dashboard
 └── addon/
-    └── blender_collab_v2.py ← Blender 4.x addon
+    └── blender_collab_v3.py ← Blender 5.x addon
 ```
 
 ---
@@ -39,17 +46,29 @@ actual student usernames and their assigned cells.
 ### 2. Start the server
 
 ```bash
+# Development (local)
 cd server
 pip install -r requirements.txt
-python app.py
+uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+
+# Production (Docker)
+docker build -t blendcolab-prod .
+docker run -d --name blendcolab-prod --restart unless-stopped \
+  -p 5000:5000 \
+  -v $(pwd)/server/models:/app/server/models \
+  -v $(pwd)/server/assets:/app/server/assets \
+  -v $(pwd)/server/snapshots:/app/server/snapshots \
+  -v $(pwd)/server/state.json:/app/server/state.json \
+  blendcolab-prod
 # Dashboard → http://localhost:5000/
+# API docs  → http://localhost:5000/docs
 ```
 
 ### 3. Install the addon in Blender
 
-**Edit → Preferences → Add-ons → Install** → select `addon/blender_collab_v2.py`
+**Edit → Preferences → Add-ons → Install** → select `addon/blender_collab_v3.py`
 
-Set the **Server URL** in the addon preferences (Edit → Preferences → Add-ons → BlenderCollab v2).
+Set the **Server URL** in the addon preferences (Edit → Preferences → Add-ons → BlenderCollab v3).
 
 ### 4. Student workflow
 
@@ -119,20 +138,37 @@ When you have the actual surveyed coordinates from the site plan:
 
 ## API Reference
 
+### Student / Public
+
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/register` | — | Register by username (cell resolved from roster) |
 | GET | `/api/layout` | — | Full layout.json with adjacency |
-| POST | `/api/publish` | token | Upload .blend for your cell |
-| GET | `/api/cells` | token | All published cell metadata |
+| GET | `/api/scene.json` | — | All cells with GLB URLs + world origins (Three.js) |
+| POST | `/api/publish` | token | Upload .blend → queues Blender pipeline |
+| GET | `/api/cells` | — | All published cell metadata |
 | GET | `/api/cells/<id>/info` | — | Single cell metadata + polygon |
 | GET | `/api/cells/<id>/neighbours` | — | Neighbour metadata |
-| GET | `/api/cells/<id>/download` | token | Download .blend file |
+| GET | `/api/cells/<id>/download` | token | Download raw .blend file |
+| GET | `/api/cells/<id>/assets` | token | Download _assets.blend (for addon linking) |
+| GET | `/api/cells/<id>/glb` | — | Download .glb (used by Three.js viewer) |
 | GET | `/api/events` | — | SSE stream (supports `?filter=neighbours&cell_id=A1.3`) |
-| GET | `/api/roster` | — | Public roster (no tokens) |
+| GET | `/api/roster` | — | Public roster |
+| GET | `/api/roster/check` | — | Username lookup with fuzzy suggestions |
 | GET | `/api/users` | — | Registered users |
 | GET | `/api/whoami` | token | Your identity + neighbours |
-| DELETE | `/api/reset_cell/<id>` | admin | Clear a cell |
+
+### Admin (require `X-Admin-Secret` header)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| DELETE | `/api/reset_cell/<id>` | Clear a single cell (blend + glb + state) |
+| POST | `/api/reset_scene` | Clear **all** cells — full scene reset |
+| POST | `/api/reprocess` | Re-run Blender pipeline for all cells |
+| POST | `/api/reprocess/<id>` | Re-run Blender pipeline for one cell |
+| POST | `/api/snapshot` | Manually take a snapshot of the full environment |
+| GET | `/api/snapshots` | List available snapshots |
+| GET | `/api/snapshots/<filename>` | Download a snapshot `.tar.gz` |
 
 ### SSE Filter
 
@@ -164,7 +200,11 @@ through a special admin cell or simply redistribute the `.blend` file.
 
 ## Production Notes
 
-- **Single Flask worker** required for SSE (or use `gunicorn -k gevent -w 1`)
-- **ADMIN_SECRET** env var controls the reset endpoint (default: `changeme`)
-- `state.json` persists across restarts — back it up to preserve student tokens
+- **FastAPI / Uvicorn** — SSE works natively; no gevent needed
+- **ADMIN_SECRET** env var controls all admin endpoints (default: `changeme` — change in production)
+- **BLENDER_BIN** env var overrides the Blender binary path (default: `blender`)
+- **SNAPSHOT_INTERVAL_HOURS** env var sets the auto-snapshot frequency (default: `24`)
+- `state.json`, `models/`, `assets/`, and `snapshots/` should be bind-mounted so data persists across container restarts
 - `.blend` files can be large; set `client_max_body_size 500m` in Nginx if proxying
+- Interactive API docs at `/docs` (Swagger UI) and `/redoc`
+- The Blender pipeline is limited to 3 concurrent processes (`_pipeline_sem`); adjust in `app.py` for your RAM
