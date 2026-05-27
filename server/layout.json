@@ -7,7 +7,8 @@
     "A1": { "color": "#e87ea1", "label": "Group A1" },
     "A2": { "color": "#6db8d4", "label": "Group A2" },
     "B1": { "color": "#7dba84", "label": "Group B1" },
-    "B2": { "color": "#c9c96a", "label": "Group B2" }
+    "B2": { "color": "#c9c96a", "label": "Group B2" },
+    "D1": { "color": "#ffaaff", "label": "Group D1" }
   },
 
   "cells": {
@@ -47,7 +48,11 @@
     "B2.5": { "group": "B2", "origin": [27,  0], "col": 9, "row": 0 },
     "B2.6": { "group": "B2", "origin": [21, -3], "col": 7, "row": -1 },
     "B2.7": { "group": "B2", "origin": [24, -3], "col": 8, "row": -1 },
-    "B2.8": { "group": "B2", "origin": [27, -3], "col": 9, "row": -1 }
+    "B2.8": { "group": "B2", "origin": [27, -3], "col": 9, "row": -1 },
+
+    
+    "D1.1": { "group": "D1", "origin": [30, 0], "col": 10, "row": 0 },
+    "D1.2": { "group": "D1", "origin": [30, -3], "col": 10, "row": -1 }
   },
 
   "adjacency": {

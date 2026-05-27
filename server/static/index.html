@@ -297,7 +297,7 @@ const ground = new THREE.Mesh(
   new THREE.MeshLambertMaterial({ color: 0x232326 })
 );
 ground.rotation.x = -Math.PI / 2;
-ground.position.set(16, -0.01, 6);
+ground.position.set(16, -0.01, -6);
 ground.receiveShadow = true;
 scene3d.add(ground);
 
@@ -328,7 +328,7 @@ composer.addPass(ssaoPass);
 // Orbit state
 let isDragging=false, lastX=0, lastY=0;
 let theta=0.6, phi=0.75, radius=52;
-const target = new THREE.Vector3(16, 2, 6);
+const target = new THREE.Vector3(16, 2, -6);
 
 function updateCam() {
   camera.position.set(
@@ -381,7 +381,7 @@ function buildCellPlates() {
     );
     mesh.rotation.x = -Math.PI/2;
     // Three.js: world X = blend X, world Z = -blend Y
-    mesh.position.set(ox+S/2, .001, oy+S/2);
+    mesh.position.set(ox+S/2, .001, -(oy+S/2));
     mesh.userData.cellId = cid;
     scene3d.add(mesh);
     cellPlates[cid] = mesh;
@@ -389,7 +389,7 @@ function buildCellPlates() {
     const edges = new THREE.EdgesGeometry(new THREE.BoxGeometry(S-.04,.01,S-.04));
     const line  = new THREE.LineSegments(edges,
       new THREE.LineBasicMaterial({ color:colour, opacity:.4, transparent:true }));
-    line.position.set(ox+S/2, .005, oy+S/2);
+    line.position.set(ox+S/2, .005, -(oy+S/2));
     scene3d.add(line);
   }
 }
@@ -434,13 +434,11 @@ function loadCellGLB(cellId, glbUrl) {
     gltf => {
       const model = gltf.scene;
 
-      // The Blender glTF exporter applies a -90deg X rotation to convert
-      // from Blender Z-up to glTF Y-up. Undo it so objects sit on the
-      // ground plane correctly and Blender XY maps to Three.js XZ.
-      model.rotation.set(0, 0, 0);
-
-      // With rotation neutralised: Blender X -> Three X, Blender Y -> Three Z
-      model.position.set(ox, 0, oy);
+      // The Blender glTF exporter bakes a -90° X rotation into the GLB root
+      // node to convert from Blender Z-up to glTF/Three.js Y-up.  Leave that
+      // rotation intact so objects stand upright (Blender Z = Three.js Y).
+      // Blender X -> Three.js X, Blender Y -> Three.js -Z (depth).
+      model.position.set(ox, 0, -oy);
 
       model.traverse(obj => {
         if (obj.isMesh) { obj.castShadow = true; obj.receiveShadow = true; }
