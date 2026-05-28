@@ -170,6 +170,37 @@ When you have the actual surveyed coordinates from the site plan:
 | GET | `/api/snapshots` | List available snapshots |
 | GET | `/api/snapshots/<filename>` | Download a snapshot `.tar.gz` |
 
+### Admin curl recipes
+
+```bash
+export BASE_URL="http://localhost:5000"
+export ADMIN_SECRET="changeme"
+```
+
+Full scene reset (clears all cells and deletes stored blend/assets files):
+
+```bash
+curl -sS -X POST "$BASE_URL/api/reset_scene" \
+  -H "X-Admin-Secret: $ADMIN_SECRET" | jq
+```
+
+Reload layout after editing `server/layout.json`:
+
+```bash
+# Local dev (from repo root)
+pkill -f "uvicorn app:app" || true
+cd server && uv run --active uvicorn app:app --host 0.0.0.0 --port 5000 --reload
+
+# Docker
+# docker restart blendcolab-prod
+```
+
+Verify the currently loaded layout:
+
+```bash
+curl -sS "$BASE_URL/api/layout" | jq
+```
+
 ### SSE Filter
 
 The addon connects to SSE with a filter parameter:
