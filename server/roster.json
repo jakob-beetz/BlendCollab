@@ -45,9 +45,9 @@
     { "username": "student31", "display_name": "Student 31", "cell_id": "B2.5", "active": true },
     { "username": "student32", "display_name": "Student 32", "cell_id": "B2.6", "active": true },
     { "username": "student33", "display_name": "Student 33", "cell_id": "B2.7", "active": true },
-    { "username": "student34", "display_name": "Student 34", "cell_id": "B2.8", "active": true }
+    { "username": "student34", "display_name": "Student 34", "cell_id": "B2.8", "active": true },
 
-    { "username": "student35", "display_name": "Student 35", "cell_id": "D1.1", "active": true }
+    { "username": "student35", "display_name": "Student 35", "cell_id": "D1.1", "active": true },
     { "username": "student36", "display_name": "Student 36", "cell_id": "B1.2", "active": true }
 
   ]
