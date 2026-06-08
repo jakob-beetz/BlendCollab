@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>BlenderCollab · Site Plan</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -431,6 +434,55 @@ footer {
   font-size: 10px;
   color: var(--text2);
 }
+
+/* ── View toggle ── */
+.view-toggle {
+  display: flex;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.view-btn {
+  padding: 4px 14px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.view-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+.view-btn:hover:not(.active) { background: var(--border); color: var(--text); }
+
+.reload-btn {
+  padding: 4px 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.reload-btn:hover { border-color: var(--accent); color: var(--accent); }
+.reload-btn.loading { opacity: .5; pointer-events: none; }
+
+/* ── Three.js canvas ── */
+#three-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -458,7 +510,12 @@ footer {
 
 <div class="map-area">
   <div class="map-toolbar">
-    <h2>Site Plan · B-Atelier · 1:1 Scale</h2>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-plan">Plan</button>
+      <button class="view-btn" id="btn-3d">3D</button>
+    </div>
+    <button class="reload-btn" id="btn-reload-glbs" title="Reload all GLBs" style="display:none">↺ Reload GLBs</button>
+    <h2>B-Atelier · 1:1 Scale</h2>
     <label><input type="checkbox" id="chk-labels" checked> Labels</label>
     <label><input type="checkbox" id="chk-names"  checked> Names</label>
     <label><input type="checkbox" id="chk-grid">  Grid</label>
@@ -475,6 +532,7 @@ footer {
       <g id="g-cells"></g>
       <g id="g-labels"></g>
     </svg>
+    <canvas id="three-canvas"></canvas>
   </div>
 </div>
 
@@ -861,6 +919,140 @@ function updateStats() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Three.js 3D viewer
+// ──────────────────────────────────────────────────────────────────────────────
+
+let renderer3, scene3, camera3, controls3, glbLoader;
+let floorPlates  = {};   // cell_id -> THREE.Mesh
+let glbModels    = {};   // cell_id -> THREE.Group
+let three3Inited = false;
+
+function initThree() {
+  const canvas = document.getElementById("three-canvas");
+  const frame  = document.querySelector(".map-frame");
+
+  renderer3 = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer3.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer3.outputEncoding   = THREE.sRGBEncoding;
+  renderer3.shadowMap.enabled = true;
+  renderer3.shadowMap.type    = THREE.PCFSoftShadowMap;
+  renderer3.toneMapping          = THREE.ACESFilmicToneMapping;
+  renderer3.toneMappingExposure  = 1.0;
+
+  scene3 = new THREE.Scene();
+  scene3.background = new THREE.Color(0x0b0c10);
+  scene3.fog = new THREE.FogExp2(0x0b0c10, 0.010);
+
+  const W = frame.clientWidth, H = frame.clientHeight;
+  camera3 = new THREE.PerspectiveCamera(45, W / H, 0.1, 500);
+  camera3.position.set(16.5, 22, 15);
+
+  controls3 = new THREE.OrbitControls(camera3, canvas);
+  controls3.target.set(16.5, 2, -6);
+  controls3.enableDamping  = true;
+  controls3.dampingFactor  = 0.07;
+  controls3.maxPolarAngle  = Math.PI / 2 - 0.02;
+  controls3.minDistance    = 3;
+  controls3.maxDistance    = 80;
+  controls3.update();
+
+  scene3.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const sun = new THREE.DirectionalLight(0xfff5e0, 1.4);
+  sun.position.set(15, 40, 20);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -30; sun.shadow.camera.right  = 30;
+  sun.shadow.camera.top  =  30; sun.shadow.camera.bottom = -30;
+  scene3.add(sun);
+  const fill = new THREE.DirectionalLight(0x809fff, 0.25);
+  fill.position.set(-20, 10, -15);
+  scene3.add(fill);
+
+  // Ground plane
+  const gnd = new THREE.Mesh(
+    new THREE.PlaneGeometry(150, 100),
+    new THREE.MeshLambertMaterial({ color: 0x0d0f14 })
+  );
+  gnd.rotation.x = -Math.PI / 2;
+  gnd.position.set(16.5, -0.02, -6);
+  gnd.receiveShadow = true;
+  scene3.add(gnd);
+
+  glbLoader = new THREE.GLTFLoader();
+
+  const ro = new ResizeObserver(() => resizeThree());
+  ro.observe(frame);
+  resizeThree();
+
+  (function loop() {
+    requestAnimationFrame(loop);
+    controls3.update();
+    renderer3.render(scene3, camera3);
+  })();
+}
+
+function resizeThree() {
+  const frame = document.querySelector(".map-frame");
+  const W = frame.clientWidth, H = frame.clientHeight;
+  renderer3.setSize(W, H);
+  camera3.aspect = W / H;
+  camera3.updateProjectionMatrix();
+}
+
+function _hexColor(str) {
+  return parseInt((str || "#888888").replace("#", ""), 16);
+}
+
+function ensureFloorPlate(cellInfo) {
+  if (floorPlates[cellInfo.cell_id]) return;
+  const [ox, oy] = cellInfo.origin;
+  const S  = cellInfo.parcel_size || 3;
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(S - 0.06, S - 0.06),
+    new THREE.MeshLambertMaterial({
+      color: _hexColor(cellInfo.group_color),
+      transparent: true,
+      opacity: 0.2,
+    })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(ox + S / 2, 0, -(oy + S / 2));
+  mesh.receiveShadow = true;
+  scene3.add(mesh);
+  floorPlates[cellInfo.cell_id] = mesh;
+}
+
+function loadCellGLB(cellInfo) {
+  if (!glbLoader || !cellInfo.has_glb) return;
+  const id  = cellInfo.cell_id;
+  const ver = cellInfo.version || 0;
+  const url = `${SERVER}/api/cells/${id}/glb?v=${ver}`;
+  const [ox, oy] = cellInfo.origin;
+
+  if (glbModels[id]) { scene3.remove(glbModels[id]); glbModels[id] = null; }
+
+  glbLoader.load(url, gltf => {
+    const mdl = gltf.scene;
+    mdl.position.set(ox, 0, -oy);
+    mdl.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    scene3.add(mdl);
+    glbModels[id] = mdl;
+    if (floorPlates[id]) floorPlates[id].material.opacity = 0.5;
+  }, undefined, err => console.warn(`GLB ${id} load failed:`, err));
+}
+
+async function loadSceneGLBs() {
+  try {
+    const r = await fetch(`${SERVER}/api/scene.json`);
+    const d = await r.json();
+    for (const cell of d.cells) {
+      ensureFloorPlate(cell);
+      if (cell.has_glb) loadCellGLB(cell);
+    }
+  } catch (e) { console.error("scene.json fetch failed:", e); }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // SSE
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -884,6 +1076,26 @@ function connectSSE() {
     logEntry("update", d.display_name || d.username, `published ${d.cell_id}`, d.updated_at);
     updateCount++;
     updateStats();
+  });
+
+  src.addEventListener("cell_pipeline_done", e => {
+    const d = JSON.parse(e.data);
+    cells[d.cell_id] = { ...(cells[d.cell_id] || {}), ...d };
+    if (three3Inited && d.has_glb && LAYOUT) {
+      const def = LAYOUT.cells[d.cell_id];
+      if (def) {
+        const cellInfo = {
+          cell_id:     d.cell_id,
+          origin:      def.origin,
+          parcel_size: LAYOUT.parcel_size || 3,
+          group_color: LAYOUT.groups[def.group]?.color || "#888888",
+          version:     d.version,
+          has_glb:     d.has_glb,
+        };
+        ensureFloorPlate(cellInfo);
+        loadCellGLB(cellInfo);
+      }
+    }
   });
 
   src.addEventListener("user_registered", e => {
@@ -949,6 +1161,42 @@ document.getElementById("chk-names").addEventListener("change", e => {
 
 document.getElementById("chk-grid").addEventListener("change", e => {
   document.getElementById("g-grid").style.display = e.target.checked ? "" : "none";
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// View toggle (Plan ↔ 3D)
+// ──────────────────────────────────────────────────────────────────────────────
+
+document.getElementById("btn-plan").addEventListener("click", () => {
+  document.getElementById("site-svg").style.display     = "";
+  document.getElementById("three-canvas").style.display = "none";
+  document.getElementById("btn-reload-glbs").style.display = "none";
+  document.getElementById("btn-plan").classList.add("active");
+  document.getElementById("btn-3d").classList.remove("active");
+});
+
+document.getElementById("btn-3d").addEventListener("click", () => {
+  document.getElementById("site-svg").style.display     = "none";
+  document.getElementById("three-canvas").style.display = "block";
+  document.getElementById("btn-reload-glbs").style.display = "";
+  document.getElementById("btn-plan").classList.remove("active");
+  document.getElementById("btn-3d").classList.add("active");
+  if (!three3Inited) {
+    three3Inited = true;
+    initThree();
+    loadSceneGLBs();
+  } else {
+    resizeThree();
+  }
+});
+
+document.getElementById("btn-reload-glbs").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-reload-glbs");
+  btn.classList.add("loading");
+  btn.textContent = "↺ Loading…";
+  await loadSceneGLBs();
+  btn.classList.remove("loading");
+  btn.textContent = "↺ Reload GLBs";
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
